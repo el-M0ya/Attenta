@@ -1,0 +1,4 @@
+## Fases: 
+- Fase 1: La landing page completa con redirección a WhatsApp. Sin la automatización 
+- Fase 2: Se integra la automatización N8N con el chatbot. Este incluye la capacidad de: recibir el pedido y notificar al cliente que será atendido con prontitud para confirmar el pedido, horario de trabajo del negocio y dirección.
+- Fase 3: Se agrega la capacidad del bot para confirmar disponibilidad del producto/servicio permitiéndole acceder a una BD que contenga la lista de productos o servicios disponibles (o para el caso de un restaurante por ejemplo los horarios y fechas disponibles para hacer las reservaciones, pudiendo inficar al cliente si ya esa fecha está ocupada o está disponible) y se le notifica al cliente esta información. Se amplía la gama de preguntas que puede responder del chatbot, incluyendo más información sobre el negocio.

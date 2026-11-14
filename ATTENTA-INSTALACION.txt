@@ -1,0 +1,25 @@
+ATTENTA — CHATBOX CON PREGUNTAS FRECUENTES OFFLINE
+
+Archivos necesarios:
+- code.html
+- n8n-brandable-chatbox.js
+
+Coloca ambos archivos en la misma carpeta y abre/publica code.html.
+
+Dentro del chat aparecen preguntas frecuentes seleccionables. Al pulsar una,
+la pregunta y su respuesta se agregan al historial del chat desde el propio
+navegador: esa interacción no hace solicitudes al webhook ni al modelo de IA.
+
+Las consultas escritas manualmente en el campo de texto siguen usando el
+webhook configurado, como en el chatbox original.
+
+La página no queda completamente independiente de Internet: conserva sus
+recursos remotos existentes (fuentes, imágenes y Tailwind CDN). Lo que funciona
+localmente son las respuestas de las preguntas frecuentes una vez cargados
+los archivos de la página.
+
+Nota de contenido:
+- La web marca la Ropa Vieja Tradicional “San Ignacio” como Plato Insignia,
+  pero no publica cifras para asegurar que sea el plato más vendido.
+- No se indican los nombres de los creadores de Attenta; la respuesta lo aclara
+  en lugar de inventar atribuciones.
