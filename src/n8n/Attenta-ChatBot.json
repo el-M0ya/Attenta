@@ -1,0 +1,247 @@
+{
+  "name": "Attenta-ChatBot",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "chat-bot",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "e9dd1163-099f-4939-996d-b4c711f6b3fd",
+      "name": "Webhook (POST)",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        688,
+        768
+      ],
+      "webhookId": "1a05e652-773a-40f2-ae60-92a875111c68"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.body.message }}",
+        "options": {
+          "systemMessage": "Eres el asistente virtual de atencion al cliente del restaurante [NOMBRE DEL RESTAURANTE]. Hablas siempre en espanol, con un tono calido, cercano y profesional, como un buen anfitrion. Respuestas breves y claras.\n\nINFORMACION DEL NEGOCIO (tu unica fuente de verdad):\n- Nombre: [NOMBRE DEL RESTAURANTE]\n- Direccion: [DIRECCION]\n- Horario: [HORARIO DE APERTURA POR DIA]\n- Tipo de cocina: [TIPO DE COCINA]\n- Menu y platos destacados: [MENU / PLATOS DESTACADOS]\n- Precios aproximados: [RANGO DE PRECIOS]\n- Opciones vegetarianas / alergias: [OPCIONES ESPECIALES]\n- Formas de pago: [FORMAS DE PAGO]\n- Estacionamiento / accesibilidad: [ESTACIONAMIENTO / ACCESIBILIDAD]\n- Capacidad maxima por reservacion: [MAXIMO DE PERSONAS]\n- Telefono / redes sociales: [CONTACTO]\n- Politicas (cancelaciones, mascotas, eventos): [POLITICAS]\n\nREGLAS ESTRICTAS:\n- Responde SOLO con la informacion de arriba. Si un dato aparece entre corchetes [ ] o no esta en la lista, no lo inventes: di amablemente que no tienes ese dato y ofrece que lo consulten por WhatsApp al +53 55843707.\n- No respondas temas ajenos al restaurante; redirige con amabilidad a lo que si puedes ayudar.\n- Responde siempre en espanol, aunque te escriban en otro idioma.\n\nRESERVACIONES:\nNecesitas: nombre, fecha, hora, numero de personas y, opcionalmente, alguna nota (ocasion especial, alergias, preferencia de mesa).\n- Conversa de forma natural: pregunta solo lo que falta, uno o dos datos a la vez, y aprovecha lo que el cliente ya dijo. Nunca muestres un formulario ni una lista de preguntas de golpe.\n- Si la fecha u hora cae fuera del horario o el grupo supera la capacidad, explicalo con amabilidad y propone una alternativa.\n- Cuando tengas todo, resume la reservacion en una frase y pregunta si la fecha y la hora son correctas.\n- Solo cuando el cliente confirme claramente, despidete con calidez, dile que pulse el enlace para enviar su reservacion por WhatsApp y termina tu respuesta con este bloque exacto, sin nada despues:\n<<RESERVA>>\nHola, quiero hacer una reservacion:\nNombre: [nombre]\nFecha: [fecha, ej. sabado 15 de noviembre de 2026]\nHora: [hora, ej. 8:00 PM]\nPersonas: [numero]\nNotas: [notas o Ninguna]\n<</RESERVA>>\n- Nunca generes ese bloque sin confirmacion explicita de fecha y hora, y nunca menciones el enlace antes de ese momento.\n- Nunca escribas tu mismo un enlace de WhatsApp; el sistema convierte el bloque en el enlace."
+        }
+      },
+      "id": "38c02528-87b3-43fd-b30b-e83c4b745df4",
+      "name": "AI Agent",
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 2.1,
+      "position": [
+        912,
+        768
+      ]
+    },
+    {
+      "parameters": {
+        "model": "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning",
+        "options": {}
+      },
+      "id": "93c22e32-9cb5-49a7-b5ad-ba553227fb8f",
+      "name": "NVIDIA Nemotron Chat Model",
+      "type": "@n8n/n8n-nodes-langchain.lmChatNvidia",
+      "typeVersion": 1,
+      "position": [
+        944,
+        992
+      ],
+      "credentials": {
+        "nvidiaApi": {
+          "id": "LpneS8p7a443nXgp",
+          "name": "NVIDIA Nemotron account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $('Webhook (POST)').item.json.body.sessionId }}"
+      },
+      "id": "b0894788-2696-47d4-9305-5b44ff83b2f8",
+      "name": "Simple Memory",
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        1072,
+        992
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "wa-number",
+              "name": "whatsapp_number",
+              "value": "+53XXXXXXXX",
+              "type": "string"
+            }
+          ]
+        },
+        "includeOtherFields": true,
+        "options": {}
+      },
+      "id": "134ebfb1-18c8-4148-b45b-983aae86e3a7",
+      "name": "Configurar WhatsApp",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        1264,
+        768
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "out-text",
+              "name": "output",
+              "value": "={{ (() => { const o = String($json.output || ''); const m = o.match(/<<RESERVA>>([\\s\\S]*?)(?:<<\\/?RESERVA>>|$)/); if (!m) return o; const link = 'https://wa.me/' + String($json.whatsapp_number).replace(/\\D/g, '') + '?text=' + encodeURIComponent(m[1].trim()); return o.replace(m[0], link).trim(); })() }}",
+              "type": "string"
+            },
+            {
+              "id": "out-link",
+              "name": "reservation_link",
+              "value": "={{ (() => { const m = String($json.output || '').match(/<<RESERVA>>([\\s\\S]*?)(?:<<\\/?RESERVA>>|$)/); return m ? 'https://wa.me/' + String($json.whatsapp_number).replace(/\\D/g, '') + '?text=' + encodeURIComponent(m[1].trim()) : ''; })() }}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "1dd560dd-e247-4f78-8c46-24e0fc2759fb",
+      "name": "Generar enlace de reserva",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        1488,
+        768
+      ]
+    },
+    {
+      "parameters": {
+        "options": {
+          "responseHeaders": {
+            "entries": [
+              {
+                "name": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "name": "Access-Control-Allow-Origin",
+                "value": "*"
+              },
+              {
+                "name": "Access-Control-Allow-Headers",
+                "value": "Content-Type, x-api-key"
+              },
+              {
+                "name": "Access-Control-Allow-Methods",
+                "value": "POST, OPTIONS"
+              }
+            ]
+          }
+        }
+      },
+      "id": "9ae0e1e1-536c-42e8-aff2-e2e5e7d03772",
+      "name": "Respond to Webhook",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1,
+      "position": [
+        1712,
+        768
+      ]
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Webhook (POST)": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "Configurar WhatsApp",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "NVIDIA Nemotron Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Simple Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Configurar WhatsApp": {
+      "main": [
+        [
+          {
+            "node": "Generar enlace de reserva",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Generar enlace de reserva": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": true,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "timeSavedMode": "fixed",
+    "callerPolicy": "workflowsFromSameOwner",
+    "availableInMCP": false,
+    "timeSavedPerExecution": 50
+  },
+  "versionId": "d70a5125-fc47-4db9-8d2c-441a66735602",
+  "meta": {
+    "templateId": "7416",
+    "templateCredsSetupCompleted": true,
+    "instanceId": "9fad2a0092fd7058ca8c0acee4565be4da6f509017b5a2cc29a3ae656ed660a5"
+  },
+  "nodeGroups": [],
+  "id": "4FyrJmLIylnlrlp5",
+  "tags": []
+}
